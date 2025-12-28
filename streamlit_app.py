@@ -30,7 +30,7 @@ h1 {text-align:left; color:#4A90E2;}
 with st.sidebar:
     st.header("ℹ️ About")
     st.write("AutoInsight AI uses AI to analyze your data and provide insights.")
-    st.write("**Supported Formats:** CSV, Excel (.xlsx/.xls), PDF (with tables)")
+    st.write("**Supported Formats:** CSV, Excel (.xlsx), PDF (with tables)")
     st.write("**AI Model:** FLAN-T5 Small (local inference)")
     st.markdown("---")
     st.write("Built with Streamlit & Transformers")
@@ -81,7 +81,7 @@ Respond as a professional data analyst would.
     return output
 
 # ---------------- UI ----------------
-uploaded_file = st.file_uploader(" Upload CSV, Excel, or PDF file", type=["csv", "xlsx", "xls", "pdf"])
+uploaded_file = st.file_uploader("📂 Upload CSV, Excel (.xlsx), or PDF file", type=["csv", "xlsx", "pdf"])
 
 if uploaded_file:
     file_type = uploaded_file.name.split('.')[-1].lower()
@@ -89,11 +89,8 @@ if uploaded_file:
     try:
         if file_type == 'csv':
             df = pd.read_csv(uploaded_file)
-        elif file_type in ['xlsx', 'xls']:
-            if file_type == 'xlsx':
-                df = pd.read_excel(uploaded_file, engine='openpyxl')
-            else:  # xls
-                df = pd.read_excel(uploaded_file, engine='xlrd')
+        elif file_type == 'xlsx':
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
         elif file_type == 'pdf':
             with pdfplumber.open(BytesIO(uploaded_file.getvalue())) as pdf:
                 tables = []
