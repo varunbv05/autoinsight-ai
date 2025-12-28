@@ -36,7 +36,11 @@ with st.sidebar:
     st.markdown("---")
     st.write("Built with Streamlit & Transformers")
 # ---------------- LOAD AI MODEL ----------------
-HF_TOKEN = os.getenv("HF_TOKEN") or "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Add your token in Streamlit secrets
+try:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+except:
+    HF_TOKEN = os.getenv("HF_TOKEN") or "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Fallback for local
+
 HF_API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
 HEADERS = {
