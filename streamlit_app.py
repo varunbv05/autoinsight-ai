@@ -32,12 +32,12 @@ with st.sidebar:
     st.header("ℹ️ About")
     st.write("AutoInsight AI uses AI to analyze your data and provide insights.")
     st.write("**Supported Formats:** CSV, Excel (.xlsx), PDF (with tables)")
-    st.write("**AI Model:** FLAN-T5 Base (Hugging Face API)")
+    st.write("**AI Model:** FLAN-T5 Small (Hugging Face API)")
     st.markdown("---")
     st.write("Built with Streamlit & Transformers")
 # ---------------- LOAD AI MODEL ----------------
 HF_TOKEN = os.getenv("HF_TOKEN") or "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Add your token in Streamlit secrets
-HF_API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+HF_API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
 HEADERS = {
     "Authorization": f"Bearer {HF_TOKEN}",
