@@ -90,7 +90,10 @@ if uploaded_file:
         if file_type == 'csv':
             df = pd.read_csv(uploaded_file)
         elif file_type in ['xlsx', 'xls']:
-            df = pd.read_excel(uploaded_file)
+            if file_type == 'xlsx':
+                df = pd.read_excel(uploaded_file, engine='openpyxl')
+            else:  # xls
+                df = pd.read_excel(uploaded_file, engine='xlrd')
         elif file_type == 'pdf':
             with pdfplumber.open(BytesIO(uploaded_file.getvalue())) as pdf:
                 tables = []
