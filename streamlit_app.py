@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from transformers import pipeline, AutoTokenizer
+import os
+import requests
 import pdfplumber
 from io import BytesIO
 
@@ -31,54 +32,58 @@ with st.sidebar:
     st.header("ℹ️ About")
     st.write("AutoInsight AI uses AI to analyze your data and provide insights.")
     st.write("**Supported Formats:** CSV, Excel (.xlsx), PDF (with tables)")
-    st.write("**AI Model:** FLAN-T5 Small (local inference)")
+    st.write("**AI Model:** FLAN-T5 Base (Hugging Face API)")
     st.markdown("---")
     st.write("Built with Streamlit & Transformers")
-@st.cache_resource
-def load_llm():
-    model_name = "google/flan-t5-small"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    pipe = pipeline(
-        "text2text-generation",
-        model=model_name,
-        tokenizer=tokenizer,
-        max_length=512
-    )
-    return pipe, tokenizer
+# ---------------- LOAD AI MODEL ----------------
+HF_TOKEN = os.getenv("HF_TOKEN") or "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Add your token in Streamlit secrets
+HF_API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
 
-llm, tokenizer = load_llm()
+HEADERS = {
+    "Authorization": f"Bearer {HF_TOKEN}",
+    "Content-Type": "application/json"
+}
 
 # ---------------- FUNCTIONS ----------------
-def generate_ai_insights(summary_text, tokenizer):
-    # Truncate input if too long
-    tokens = tokenizer.encode(summary_text, add_special_tokens=True)
-    if len(tokens) > 450:  # Leave room for prompt
-        truncated_tokens = tokens[:450]
-        summary_text = tokenizer.decode(truncated_tokens, skip_special_tokens=True)
+def generate_ai_insights(summary_text):
+    # Truncate if too long
+    if len(summary_text) > 1500:
+        summary_text = summary_text[:1500] + "..."
     
     prompt = f"""
-You are an expert data analyst with 10+ years of experience. Analyze the following dataset summary and provide deep, actionable insights.
+You are an expert data analyst. Analyze this dataset summary and provide actionable insights.
 
 DATASET ANALYSIS:
 {summary_text}
 
-INSTRUCTIONS:
-1. **Key Trends & Patterns**: Identify significant trends, correlations, and patterns in the data. Explain what they mean.
-2. **Anomalies & Outliers**: Highlight any anomalies, outliers, or unusual data points and their potential causes.
-3. **Business Insights**: Provide 4-5 specific, actionable business insights based on the data analysis.
-4. **Recommendations**: Suggest 3-4 concrete actions or next steps for data-driven decision making.
-5. **Data Quality Notes**: Comment on data quality, missing values, and any concerns.
+Provide:
+1. Key trends and patterns
+2. Anomalies or outliers  
+3. Business insights
+4. Recommendations
 
-FORMAT:
-- Use clear headings for each section
-- Be specific and reference actual data points/numbers
-- Focus on actionable insights, not generic statements
-- Keep response concise but comprehensive (300-500 words)
-
-Respond as a professional data analyst would.
+Keep response under 300 words.
 """
-    output = llm(prompt)[0]["generated_text"]
-    return output
+    
+    try:
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 300,
+                "temperature": 0.3,
+                "do_sample": True
+            }
+        }
+        response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=30)
+        if response.status_code == 200:
+            result = response.json()
+            if isinstance(result, list) and result:
+                return result[0].get("generated_text", "No insights generated.")
+            return str(result)
+        else:
+            return f"API Error: {response.status_code}"
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # ---------------- UI ----------------
 uploaded_file = st.file_uploader("📂 Upload CSV, Excel (.xlsx), or PDF file", type=["csv", "xlsx", "pdf"])
@@ -218,7 +223,7 @@ if uploaded_file:
 
         if st.button("Generate AI Insights"):
             with st.spinner("Analyzing with AI..."):
-                insights = generate_ai_insights(summary_text, tokenizer)
+                insights = generate_ai_insights(summary_text)
             st.subheader("AI Generated Insights")
             st.success(insights)
 
